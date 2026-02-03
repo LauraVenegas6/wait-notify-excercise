@@ -5,6 +5,8 @@
  */
 package edu.eci.arsw.primefinder;
 
+import java.io.IOException;
+
 /**
  *
  */
@@ -45,8 +47,41 @@ public class Control extends Thread {
 
     @Override
     public void run() {
-        for(int i = 0;i < NTHREADS;i++ ) {
+        
+        for(int i = 0; i < NTHREADS; i++) {
             pft[i].start();
+        }
+        
+        
+        try {
+            while(true) {
+                Thread.sleep(TMILISECONDS);
+                
+    
+                synchronized(lock) {
+                    paused = true;
+                }
+
+                int totalPrimes = 0;
+                for(int i = 0; i < NTHREADS; i++) {
+                    totalPrimes += pft[i].getPrimes().size();
+                }
+                System.out.println("\nPAUSA");
+                System.out.println("Primos encontrados hasta ahora: " + totalPrimes);
+                System.out.println("Presione ENTER para reanudar");
+    
+                System.in.read();
+                
+                synchronized(lock) {
+                    paused = false;
+                    lock.notifyAll();
+                }
+                System.out.println("REANUDANDO\n");
+            }
+        } catch(IOException e) {
+            e.printStackTrace();
+        } catch(InterruptedException e) {
+            e.printStackTrace();
         }
     }
     
