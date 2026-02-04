@@ -10,6 +10,8 @@ public class PrimeFinderThread extends Thread{
 	private Object pauseLock;
 	private Control control;
 	private List<Integer> primes;
+	private boolean reportedPause = false;
+    
 	
 	public PrimeFinderThread(int a, int b, Object lock, Control control) {
 		super();
@@ -26,11 +28,16 @@ public class PrimeFinderThread extends Thread{
                 synchronized(pauseLock){
                     while (control.isPaused()){
                         try {
+                            if (!reportedPause) {
+                                control.incrementPausedThreads();
+                                reportedPause = true;
+                            }
                             pauseLock.wait();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                     }
+                    reportedPause = false;
                 }
                 if (isPrime(i)){
                     primes.add(i);

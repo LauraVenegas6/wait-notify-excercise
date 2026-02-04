@@ -17,6 +17,7 @@ public class Control extends Thread {
     private final static int TMILISECONDS = 5000;
     private final Object lock = new Object();
     private volatile boolean paused = false;
+    private int pausedThreads;
 
     private final int NDATA = MAXVALUE / NTHREADS;
 
@@ -45,6 +46,19 @@ public class Control extends Thread {
         return paused;
     }
 
+    public void incrementPausedThreads() {
+        synchronized(lock) {
+            pausedThreads++;
+            lock.notifyAll();
+        }
+    }
+
+    public void restartPausedThreads() {
+        synchronized(lock) {
+            pausedThreads = 0;
+        }
+    }
+
     @Override
     public void run() {
         
@@ -52,14 +66,18 @@ public class Control extends Thread {
             pft[i].start();
         }
         
-        
         try {
             while(true) {
                 Thread.sleep(TMILISECONDS);
-                
-    
                 synchronized(lock) {
                     paused = true;
+                    pausedThreads = 0;
+                }
+    
+                synchronized(lock) {
+                    while (pausedThreads < NTHREADS) {
+                        lock.wait();
+                    }
                 }
 
                 int totalPrimes = 0;
@@ -71,8 +89,8 @@ public class Control extends Thread {
                 System.out.println("Presione ENTER para reanudar");
     
                 System.in.read();
-                
                 synchronized(lock) {
+                    pausedThreads = 0;
                     paused = false;
                     lock.notifyAll();
                 }
